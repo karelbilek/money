@@ -59,8 +59,8 @@ func (m Money) getMinorAmount() *big.Int {
 
 // ToMinor returns value in minor units ("cents") as a string.
 // The result is always representing integer.
-func (m Money) ToMinor() (string, error) {
-	return m.getMinorAmount().String(), nil
+func (m Money) ToMinor() (string) {
+	return m.getMinorAmount().String()
 }
 
 func (m Money) DebugString() string {

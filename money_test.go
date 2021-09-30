@@ -25,22 +25,19 @@ var bhd = Currency{
 func TestMoney_ToMinor(t *testing.T) {
 	t.Run("normal - 2 decimals", func(t *testing.T) {
 		j := &Money{minorAmount: big.NewInt(12345), currency: php}
-		r, err := j.ToMinor()
-		require.NoError(t, err)
+		r := j.ToMinor()
 		require.Equal(t, "12345", r)
 	})
 
 	t.Run("normal - 0 decimals", func(t *testing.T) {
 		j := &Money{minorAmount: big.NewInt(12345), currency: vnd}
-		r, err := j.ToMinor()
-		require.NoError(t, err)
+		r := j.ToMinor()
 		require.Equal(t, "12345", r)
 	})
 
 	t.Run("default", func(t *testing.T) {
 		j := &Money{}
-		r, err := j.ToMinor()
-		require.NoError(t, err)
+		r := j.ToMinor()
 		require.Equal(t, "0", r)
 	})
 }
