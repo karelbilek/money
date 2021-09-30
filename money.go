@@ -59,7 +59,7 @@ func (m Money) getMinorAmount() *big.Int {
 
 // ToMinor returns value in minor units ("cents") as a string.
 // The result is always representing integer.
-func (m Money) ToMinor() (string) {
+func (m Money) ToMinor() string {
 	return m.getMinorAmount().String()
 }
 
@@ -78,9 +78,13 @@ func (m Money) ToMajor() string {
 	return m.FormatMajor(Formatter{"", ".", GroupSizeNone, 0})
 }
 
-// ToBigInt returns the minor amount as a big.Int
-func (m Money) ToBigInt() *big.Int {
-	return m.getMinorAmount()
+// MinorInt64 returns the minor amount as a int64, or error
+func (m Money) MinorInt64() (int64, error) {
+	bi := m.getMinorAmount()
+	if bi.IsInt64() {
+		return bi.Int64(), nil
+	}
+	return 0, fmt.Errorf("number %s cannot be represented as int64", m.DebugString())
 }
 
 type Parser struct {
