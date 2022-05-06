@@ -58,7 +58,7 @@ func (ps parsedString) String() string {
 // JSON number regex
 // from https://stackoverflow.com/questions/13340717/json-numbers-regular-expression
 // with additionally allowing leading 0s (as we do not interpret them as octals)
-var intreg = regexp.MustCompile("^(?P<oparen>[(])?(?P<sign>-)?(?P<dec>(?:[0-9]+))(?:\\.(?P<frac>[0-9]+))?(?:[eE](?P<expSign>[+-]?)(?P<exp>[0-9]+))?(?P<cparen>[)])?$")
+var intreg = regexp.MustCompile(`^(?P<oparen>[(])?(?P<sign>-)?(?P<dec>(?:[0-9]+))(?:\.(?P<frac>[0-9]+))?(?:[eE](?P<expSign>[+-]?)(?P<exp>[0-9]+))?(?P<cparen>[)])?$`)
 
 func parseString(s string) *parsedString {
 	// number needs to be parsed manually to do checks on exponent
@@ -200,4 +200,14 @@ func (v Decimal) BigInt(fracDecimals int) (*big.Int, error) {
 	}
 	// if f IsInt -> denominator is 1, numerator is the int
 	return f.Num(), nil
+}
+
+// UnmarshalJSON unmarshals from "1.23" to amount.
+func (v *Decimal) UnmarshalJSON(data []byte) error {
+	n, err := FromString(string(data))
+	if err != nil {
+		return err
+	}
+	v.rat = n.rat
+	return nil
 }

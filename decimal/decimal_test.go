@@ -1,6 +1,7 @@
 package decimal
 
 import (
+	"encoding/json"
 	"math/big"
 	"testing"
 
@@ -121,5 +122,51 @@ func TestDecimal_BigInt(t *testing.T) {
 		b, err := d.BigInt(2)
 		require.EqualError(t, err, "rational 1/3 is repeating")
 		require.Nil(t, b)
+	})
+}
+
+func TestDecimal_UnmarshalJSON(t *testing.T) {
+	t.Run("normal", func(t *testing.T) {
+		w := WithAmounts{}
+		err := json.Unmarshal([]byte(`{"value": -0.02,"pointer":12345}`), &w)
+		require.NoError(t, err)
+		require.NotNil(t, w.Value.rat)
+		require.Zero(t, w.Value.rat.Cmp(big.NewRat(-2, 100)))
+		require.NotNil(t, w.Pointer)
+		require.NotNil(t, w.Pointer.rat)
+		require.Zero(t, w.Pointer.rat.Cmp(big.NewRat(12345, 1)))
+	})
+
+	t.Run("exp format", func(t *testing.T) {
+		w := WithAmounts{}
+		err := json.Unmarshal([]byte(`{"value": -12.3e-2}`), &w)
+		require.NoError(t, err)
+		require.Nil(t, w.Pointer)
+		require.NotNil(t, w.Value.rat)
+		require.Zero(t, w.Value.rat.Cmp(big.NewRat(-123, 1000)))
+	})
+
+	t.Run("default", func(t *testing.T) {
+		w := WithAmounts{}
+		err := json.Unmarshal([]byte(`{}`), &w)
+		require.NoError(t, err)
+		require.Nil(t, w.Value.rat)
+		require.Nil(t, w.Pointer)
+	})
+
+	t.Run("error - nonsense", func(t *testing.T) {
+		w := WithAmounts{}
+		err := json.Unmarshal([]byte(`{"value": ["some", "weird", "thing"]}`), &w)
+		require.EqualError(t, err, `["some", "weird", "thing"] is not a valid decimal amount`)
+		require.Nil(t, w.Value.rat)
+		require.Nil(t, w.Pointer)
+	})
+
+	t.Run("error - string", func(t *testing.T) {
+		w := WithAmounts{}
+		err := json.Unmarshal([]byte(`{"value": "1.2"}`), &w)
+		require.EqualError(t, err, "\"1.2\" is not a valid decimal amount")
+		require.Nil(t, w.Value.rat)
+		require.Nil(t, w.Pointer)
 	})
 }
