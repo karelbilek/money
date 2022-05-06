@@ -109,7 +109,7 @@ func FromMajor(major string, p Parser) (*Money, error) {
 		return nil, err
 	}
 
-	return fromMajorDecimal(d, p.Currency)
+	return FromMajorDecimal(d, p.Currency)
 }
 
 // FromMinorInt imports from the given int, representing minor units
@@ -143,7 +143,7 @@ func FromMajorInt(i int64, c Currency) *Money {
 }
 
 // fromMajorDecimal imports from the given decimal, representing major units
-func fromMajorDecimal(f decimal.Decimal, c Currency) (*Money, error) {
+func FromMajorDecimal(f decimal.Decimal, c Currency) (*Money, error) {
 	dec := c.Decimals
 
 	d, err := f.BigInt(dec)
