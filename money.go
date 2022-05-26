@@ -91,6 +91,8 @@ type Parser struct {
 	Currency
 	GroupSep string
 	DecSep   string
+
+	AllowExtraZeroes bool
 }
 
 // FromMajor imports from string in major units and a currency code
@@ -99,6 +101,27 @@ func FromMajor(major string, p Parser) (*Money, error) {
 		return nil, fmt.Errorf(
 			"group and decimal separator cannot be the same, are %q and %q",
 			p.GroupSep, p.DecSep)
+	}
+
+	// first do sanity checks
+	majorSplit := strings.Split(major, p.DecSep)
+	if len(majorSplit) > 2 {
+		return nil, fmt.Errorf("number %q has too many decimal separators %q, max is 1, has %d", major, p.DecSep, len(majorSplit)-1)
+	}
+	if len(majorSplit) == 2 {
+		if p.GroupSep != "" {
+			groupsInDecs := strings.Contains(majorSplit[1], p.GroupSep)
+			if groupsInDecs {
+				return nil, fmt.Errorf("number %q has group separator %q in decimal part (%q)", major, p.GroupSep, majorSplit[1])
+			}
+		}
+
+		if !p.AllowExtraZeroes {
+			// do not allow longer decimals (if we have leading zeroes, this would otherwise still go through FromMajorDecimal below)
+			if len(majorSplit[1]) > p.Currency.Decimals {
+				return nil, fmt.Errorf("number %q has too many decimals - only %d allowed, has %d (%q)", major, p.Currency.Decimals, len(majorSplit[1]), majorSplit[1])
+			}
+		}
 	}
 
 	major = strings.ReplaceAll(major, p.GroupSep, "")

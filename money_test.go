@@ -223,6 +223,15 @@ func TestFromMajor(t *testing.T) {
 		require.Zero(t, m.minorAmount.Cmp(big.NewInt(12345)))
 	})
 
+	t.Run("normal - empty group sec works", func(t *testing.T) {
+		m, err := FromMajor("123123.4", Parser{Currency: php, GroupSep: "", DecSep: "."})
+		require.NoError(t, err)
+		require.NotNil(t, m)
+		require.EqualValues(t, m.currency, php)
+		require.NotNil(t, m.minorAmount)
+		require.Zero(t, m.minorAmount.Cmp(big.NewInt(12312340)))
+	})
+
 	t.Run("normal - negative", func(t *testing.T) {
 		m, err := FromMajor("-123.45", Parser{Currency: php, GroupSep: " ", DecSep: "."})
 		require.NoError(t, err)
@@ -253,15 +262,27 @@ func TestFromMajor(t *testing.T) {
 		require.Nil(t, m)
 	})
 
+	t.Run("switched group and decimal seps", func(t *testing.T) {
+		m, err := FromMajor("1,500.00", Parser{Currency: php, GroupSep: ".", DecSep: ","})
+		require.EqualError(t, err, "number \"1,500.00\" has group separator \".\" in decimal part (\"500.00\")")
+		require.Nil(t, m)
+	})
+
+	t.Run("switched group and decimal seps - 2", func(t *testing.T) {
+		m, err := FromMajor("1,500,000", Parser{Currency: php, GroupSep: "", DecSep: ","})
+		require.EqualError(t, err, "number \"1,500,000\" has too many decimal separators \",\", max is 1, has 2")
+		require.Nil(t, m)
+	})
+
 	t.Run("too many decimals - 2 decimal currency", func(t *testing.T) {
 		m, err := FromMajor("1.234", Parser{Currency: php, GroupSep: " ", DecSep: "."})
-		require.EqualError(t, err, "1.234 has 3 decimals, only 2 allowed")
+		require.EqualError(t, err, "number \"1.234\" has too many decimals - only 2 allowed, has 3 (\"234\")")
 		require.Nil(t, m)
 	})
 
 	t.Run("too many decimals - 0 decimal currency", func(t *testing.T) {
 		m, err := FromMajor("1.2", Parser{Currency: vnd, GroupSep: " ", DecSep: "."})
-		require.EqualError(t, err, "1.2 has 1 decimals, only 0 allowed")
+		require.EqualError(t, err, "number \"1.2\" has too many decimals - only 0 allowed, has 1 (\"2\")")
 		require.Nil(t, m)
 	})
 
@@ -289,13 +310,19 @@ func TestFromMajor(t *testing.T) {
 		require.Nil(t, m)
 	})
 
-	t.Run("normal - extra zero decimals", func(t *testing.T) {
-		m, err := FromMajor("123.400000", Parser{Currency: php, GroupSep: " ", DecSep: "."})
+	t.Run("normal - allow extra zero decimals", func(t *testing.T) {
+		m, err := FromMajor("123.400000", Parser{Currency: php, GroupSep: " ", DecSep: ".", AllowExtraZeroes: true})
 		require.NoError(t, err)
 		require.NotNil(t, m)
 		require.EqualValues(t, m.currency, php)
 		require.NotNil(t, m.minorAmount)
 		require.Zero(t, m.minorAmount.Cmp(big.NewInt(12340)))
+	})
+
+	t.Run("normal - do not allow extra zero decimals", func(t *testing.T) {
+		m, err := FromMajor("123.400000", Parser{Currency: php, GroupSep: " ", DecSep: "."})
+		require.EqualError(t, err, `number "123.400000" has too many decimals - only 2 allowed, has 6 ("400000")`)
+		require.Nil(t, m)
 	})
 }
 
